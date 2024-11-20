@@ -28,6 +28,9 @@ namespace glhelper
   GLuint create_program_from_file(const std::string& vs_file,
       const std::string& fs_file);
 
+  GLuint create_program_from_file_with_geom(const std::string& vs_file,
+      const std::string& fs_file,
+      const std::string& geom_file);
 
   // return id of the gpu program
   GLuint create_program(const std::string& vs_content,

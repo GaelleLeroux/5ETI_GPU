@@ -110,6 +110,34 @@ namespace glhelper
     return create_program(read_file(vs_file), read_file(fs_file));
   }
 
+  
+  GLuint create_program_from_file_with_geom(
+      const std::string& vs_file,
+      const std::string& fs_file,
+      const std::string& geom_file)
+  {
+    
+    std::string vs_content = read_file(vs_file);
+    std::string fs_content = read_file(fs_file);
+    std::string geom_content = read_file(geom_file);
+    
+    GLuint vs_id = compile_shader(vs_content.c_str(),GL_VERTEX_SHADER);
+    GLuint fs_id = compile_shader(fs_content.c_str(),GL_FRAGMENT_SHADER);
+    GLuint geom_id = compile_shader(geom_content.c_str(),GL_GEOMETRY_SHADER);
+
+    GLuint program_id = glCreateProgram();
+    glAttachShader(program_id, vs_id);
+    glAttachShader(program_id, fs_id);
+    glAttachShader(program_id, geom_id);
+
+    glLinkProgram(program_id);
+    check_error_link(program_id);
+    glDeleteShader(vs_id);
+    glDeleteShader(fs_id);
+    glDeleteShader(geom_id);
+
+    return program_id;
+  }
 
   GLuint load_texture(std::string filename)
   {

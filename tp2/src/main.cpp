@@ -29,6 +29,7 @@ GLuint program_id;
 std::vector<GLuint> programmes_id;
 int id_n = 0;
 
+
 void init()
 {
     glClearColor(0.1, 0.1, 0.1, 0);
@@ -38,6 +39,12 @@ void init()
     programmes_id.push_back(program_id);
     program_id = glhelper::create_program_from_file("shaders/texture.vert", "shaders/texture.frag");
     programmes_id.push_back(program_id);
+
+    program_id = glhelper::create_program_from_file_with_geom("shaders/texture.vert", 
+                                                            "shaders/texture.frag",
+                                                            "shaders/basic.geom");
+    programmes_id.push_back(program_id);
+    
 
     Mesh m = Mesh::load_from_file("data/Frankie/Frankie.obj");
     m.compute_normales();

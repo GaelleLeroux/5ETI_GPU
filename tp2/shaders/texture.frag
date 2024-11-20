@@ -11,5 +11,6 @@ void main()
     // Récupère la couleur de la texture à partir des coordonnées
     // Applique un décalage périodique basé sur le temps
     vec2 offset = vec2(sin(time) * 0.1, cos(time) * 0.1);
+    
     FragColor = texture(textureSampler, fragTexCoord+offset);
 }
