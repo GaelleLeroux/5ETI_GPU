@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <chrono>
 
 #define GLEW_STATIC 1
 #include <GL/glew.h>
@@ -64,6 +65,22 @@ void set_uniform_mvp(GLuint program)
   glUseProgram(current_prog_id);
 }
 
+void set_uniform_time(GLuint program)
+{
+    static auto t_start = std::chrono::high_resolution_clock::now(); // Temps de départ, mémorisé
+
+    GLint time_id = glGetUniformLocation(program, "time"); // Récupère l'emplacement de l'uniforme
+    GLint current_prog_id;
+    glGetIntegerv(GL_CURRENT_PROGRAM, &current_prog_id);
+    glUseProgram(program);
+  
+    auto t_now = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float>(t_now - t_start).count(); // Temps écoulé en secondes
+    glUniform1f(time_id, time); // Passe la valeur au shader
+  
+    glUseProgram(current_prog_id); // Restaure le programme précédent
+}
+
 static void display_callback()
 {
 
@@ -72,6 +89,7 @@ static void display_callback()
     glUseProgram(program_id);
     glBindVertexArray(VAO);
     set_uniform_mvp(program_id);
+    set_uniform_time(program_id);
 
     glDrawElements(GL_TRIANGLES, n_elements, GL_UNSIGNED_INT, 0);
 
