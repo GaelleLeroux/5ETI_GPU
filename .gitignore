@@ -2,3 +2,5 @@ freeglut
 glew
 tp_gpu_introduction/CMakeFiles/
 tp_gpu_introduction/build/
+tp2/build/
+tp2/extern/
