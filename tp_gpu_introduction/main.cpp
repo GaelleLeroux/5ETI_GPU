@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <vector>
 
 #define GLEW_STATIC 1
 #include <GL/glew.h>
@@ -18,6 +19,9 @@
 #include "stb_image.h"
 
 unsigned int VBO, VAO, EBO;
+int programme;
+int programme_squirrel;
+int use;
 
 // Renvoi le contenu d'un fichier
 std::string lit_fichier(const std::string& filename)
@@ -83,8 +87,11 @@ int compile_shader(const char* shader_source, int shader_type)
   // Mettre le code voulu dans le shader
   //  -> glShaderSource(GLuint, 1, const GLchar * const *, NULL);
   // Compiler le shader -> glCompileShader(GLuint);
+  int shader_id = glCreateShader(shader_type);
+  glShaderSource(shader_id, 1, &shader_source, NULL);
+  glCompileShader(shader_id);
 
-  int shader_id;
+  
   // FIN TODO
   glGetShaderiv(shader_id, GL_COMPILE_STATUS, &success);
   if (!success)
@@ -109,8 +116,20 @@ int creation_programme(const std::string& vertex_shader, const std::string& frag
   // Créer un nouveau programmme vide GPU -> glCreateProgram()
   // Lier les deux shader au programme GPU -> glAttachShader(GLuint, GLuint)
   // Lier le programme a la CG -> glGetLinkProgram()
+  // glCreateProgram();
+  // glAttachShader(GLuint, GLuint);
+  // glGetLinkProgram();
+  
 
-  int shaderProgram;
+  int vertex_id = compile_shader(vertex_shader.c_str(),GL_VERTEX_SHADER);
+  int fragment_id = compile_shader(fragment_shader.c_str(),GL_FRAGMENT_SHADER);
+  int shaderProgram = glCreateProgram();
+
+
+  glAttachShader(shaderProgram,vertex_id);
+  glAttachShader(shaderProgram,fragment_id);
+
+  glLinkProgram(shaderProgram);
   // FIN TODO
 
   glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
@@ -121,6 +140,9 @@ int creation_programme(const std::string& vertex_shader, const std::string& frag
 
   // TODO
   // Supprimer les deux shaders -> glDeleteShader(GLuint)
+  // glDeleteShader(GLuint);
+  glDeleteShader(vertex_id);
+  glDeleteShader(fragment_id);
 
   // FIN TODO
 
@@ -130,19 +152,64 @@ int creation_programme(const std::string& vertex_shader, const std::string& frag
 // Méthode d'initialisation pour afficher un carre qui recouvre la fenêtre
 void init()
 {
+  use = 0;
+  load_texture("squirel.png");
   // TODO :
   // Lire les fichiers contenant les programmes des shaders puis les utiliser pour créer le programme
+  std::string fs = lit_fichier("color.fs"); // C'est notre programme  que l'on veut run 
+  std::string vs = lit_fichier("color.vs");
+
+  std::string squirrel_fs = lit_fichier("texture.fs"); // C'est notre programme  que l'on veut run 
+  std::string squirrel_vs = lit_fichier("texture.vs");
+
+  programme = creation_programme(vs,fs);
+  programme_squirrel = creation_programme(squirrel_vs,squirrel_fs);
   // Créer un tableau de float contenant les sommets à afficher
+  std::vector<float> sommets = {
+      // Positions des sommets (x, y, z) avec des couleurs
+      -0.5f, -0.5f, 0.0f,  0.0f, 1.0f,  // Sommet 1 (bas-gauche)
+      0.5f, -0.5f, 0.0f,   1.0f, 1.0f,   // Sommet 2 (bas-droite)
+      0.5f,  0.5f, 0.0f,   1.0f, 0.0f,   // Sommet 3 (haut-droite)
+      -0.5f,  0.5f, 0.0f,  0.0f, 0.0f   // Sommet 4 (haut-gauche)
+  };
+
   // Créer un ficher d'entier non signé contenant les indices de sommets
+  std::vector<unsigned int> indices = {
+    0, 1, 2,
+    2, 3, 0  // Les trois sommets du triangle
+  };
+
+
   // Créer un VAO -> glGenVertexArrays(GLsizei, GLuint *)
+  glGenVertexArrays(1,&VAO); // VAO contient les liens entre VBO et EBO
   // Créer un VBO puis un EBO -> glGenBuffers(GLsizei, GLuint *)
+  glGenBuffers(1,&VBO); // VBO contient les donnees des sommets 
+  glGenBuffers(1,&EBO); // EBO contient les indices des sommets
   // Mettre le VAO en actif dans la machine d'état -> glBindVertexArray(GLuint)
+  glBindVertexArray(VAO);
   // Remplir le VBO puis l'EBO en utilisant la machine d'état.
+  glBindBuffer(GL_ARRAY_BUFFER,VBO);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,EBO);
+
+  
   //  -> glBindBuffer(GLenum, GLuint) et glBufferData(GLenum, GLsizeiptr, const GLvoid*, GL_STATIC_DRAW);
   // Specifier comment parcourir les buffers crées (utilise le dernier VBO de type GL_ARRAY_BUFFER) :
+  glBufferData(GL_ARRAY_BUFFER, sommets.size() * sizeof(float), sommets.data(), GL_STATIC_DRAW);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
   //  -> glVertexAttribPointer(GLuint, GLint, GLenum, GLboolean, glsizei, const void*)
   //      Pour l'indice, se référer au vertex shader !
+
+  ///////////////// POUR LES POINTS DANS L'ESPACE
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(0*sizeof(float)));
   // Activer notre tableau de vertices : glEnableVertexAttribArray(GLuint)
+  glEnableVertexAttribArray(0);
+
+  ///////////////// POUR LA TEXTURE
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3*sizeof(float)));
+  // Activer notre tableau de vertices : glEnableVertexAttribArray(GLuint)
+  glEnableVertexAttribArray(1);
+
+
   //
   // Le VAO permet de ne pas répéter les étapes de lecture des buffers à chaque affichage !
   // Les VAO peuvent être obligatoires dans certains cas.
@@ -155,10 +222,11 @@ void init()
   // Pas nécessaire mais permet de contrôler un peu ce qui est fait...
   // Globalement tous les GlEnable...
   // Décommenter et essayer de comprendre
-  //glEnable(GL_CULL_FACE);
-  //glFrontFace(GL_CCW);
-  //glCullFace(GL_FRONT);
-  //glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+  // glEnable(GL_CULL_FACE);
+  // glFrontFace(GL_CCW);
+  // glCullFace(GL_FRONT);
+  // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+  
 }
 
 // Boucle d'affichage
@@ -169,13 +237,43 @@ static void display_callback()
 
   // TODO :
   // Specifier le programme -> glUseProgram(GLuint)
+  init();
+  if (use==0){
+    glUseProgram(programme);
+  }
+  else if(use==1){
+    glUseProgram(programme_squirrel);
+  }
   // Specifier le VAO à utiliser -> glBindVertexArray(GLuint)
+  glBindVertexArray(VAO);
   // Demander affichage -> glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
   // END TODO
   glBindVertexArray(0);
   glutSwapBuffers ();
   // Pour afficher de nouveau
   glutPostRedisplay();
+}
+
+void restart_programme(){
+      glDeleteProgram(programme);
+
+      std::cout<<"programme delete "<<std::endl;
+      std::string fs = lit_fichier("color.fs"); // C'est notre programme  que l'on veut run 
+      std::string vs = lit_fichier("color.vs");
+      programme = creation_programme(vs,fs);
+
+}
+
+void switch_programme(){
+      std::cout<<use<<std::endl;
+      if (use==0){
+        use=1;
+      }
+      else if (use==1){
+        use=0;
+      }
+      std::cout<<use<<std::endl;
 }
 
 static void keyboard_callback(unsigned char key, int, int)
@@ -184,6 +282,12 @@ static void keyboard_callback(unsigned char key, int, int)
   {
     case 'q':
     case 'Q':
+    case 'r': 
+      restart_programme();
+      break;
+    case 's': 
+      switch_programme();
+      break;
     case 27:
               exit(0);
   }
