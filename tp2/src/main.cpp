@@ -42,10 +42,10 @@ void init()
     
     program_id = glhelper::create_program_from_file("shaders/texture.vert", "shaders/texture_mouv.frag");
     programmes_id.push_back(program_id);
-    
-    program_id = glhelper::create_program_from_file_with_geom("shaders/texture.vert", 
+
+    program_id = glhelper::create_program_from_file_with_geom("shaders/texture_6.vert", 
                                                             "shaders/texture.frag",
-                                                            "shaders/basic.geom");
+                                                            "shaders/explode.geom");
     programmes_id.push_back(program_id);
 
    
@@ -115,6 +115,7 @@ static void display_callback()
 static void switch_programme(){
         id_n = (id_n + 1) % programmes_id.size();
         program_id = programmes_id[id_n];
+        std::cout<<"programme : "<<id_n<<std::endl;
 }
 
 
