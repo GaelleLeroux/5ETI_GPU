@@ -18,7 +18,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-unsigned int VBO, VAO, EBO;
+unsigned int VBO, VAO, EBO, VBO_couleurs;
 int programme;
 int programme_squirrel;
 int usep=1;
@@ -159,8 +159,8 @@ void init()
   std::string fs = lit_fichier("color.fs"); // C'est notre programme  que l'on veut run 
   std::string vs = lit_fichier("color.vs");
 
-  std::string squirrel_fs = lit_fichier("cercle.fs"); // C'est notre programme  que l'on veut run 
-  std::string squirrel_vs = lit_fichier("texture.vs");
+  std::string squirrel_fs = lit_fichier("color_sommet.fs"); // C'est notre programme  que l'on veut run 
+  std::string squirrel_vs = lit_fichier("color_sommet.vs");
 
   programme = creation_programme(vs,fs);
   programme_squirrel = creation_programme(squirrel_vs,squirrel_fs);
@@ -172,6 +172,13 @@ void init()
       0.5f,  0.5f, 0.0f,   1.0f, 0.0f,   // Sommet 3 (haut-droite)
       -0.5f,  0.5f, 0.0f,  0.0f, 0.0f   // Sommet 4 (haut-gauche)
   };
+
+  std::vector<float> couleurs = {
+    1.0f, 0.0f, 0.0f,  // Couleur pour le sommet 1 (bas-gauche)
+    0.0f, 1.0f, 0.0f,  // Couleur pour le sommet 2 (bas-droite)
+    0.0f, 0.0f, 1.0f,  // Couleur pour le sommet 3 (haut-droite)
+    1.0f, 1.0f, 0.0f   // Couleur pour le sommet 4 (haut-gauche)
+};
 
   // Créer un ficher d'entier non signé contenant les indices de sommets
   std::vector<unsigned int> indices = {
@@ -208,6 +215,12 @@ void init()
   glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3*sizeof(float)));
   // Activer notre tableau de vertices : glEnableVertexAttribArray(GLuint)
   glEnableVertexAttribArray(1);
+
+  glGenBuffers(1, &VBO_couleurs);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO_couleurs);
+  glBufferData(GL_ARRAY_BUFFER, couleurs.size() * sizeof(float), couleurs.data(), GL_STATIC_DRAW);
+  glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)(0 * sizeof(float)));
+  glEnableVertexAttribArray(2);
 
 
   //
