@@ -21,7 +21,8 @@
 unsigned int VBO, VAO, EBO;
 int programme;
 int programme_squirrel;
-int use;
+int usep=1;
+
 
 // Renvoi le contenu d'un fichier
 std::string lit_fichier(const std::string& filename)
@@ -152,14 +153,13 @@ int creation_programme(const std::string& vertex_shader, const std::string& frag
 // Méthode d'initialisation pour afficher un carre qui recouvre la fenêtre
 void init()
 {
-  use = 0;
   load_texture("squirel.png");
   // TODO :
   // Lire les fichiers contenant les programmes des shaders puis les utiliser pour créer le programme
   std::string fs = lit_fichier("color.fs"); // C'est notre programme  que l'on veut run 
   std::string vs = lit_fichier("color.vs");
 
-  std::string squirrel_fs = lit_fichier("texture.fs"); // C'est notre programme  que l'on veut run 
+  std::string squirrel_fs = lit_fichier("cercle.fs"); // C'est notre programme  que l'on veut run 
   std::string squirrel_vs = lit_fichier("texture.vs");
 
   programme = creation_programme(vs,fs);
@@ -238,11 +238,14 @@ static void display_callback()
   // TODO :
   // Specifier le programme -> glUseProgram(GLuint)
   init();
-  if (use==0){
+  if (usep==0){
     glUseProgram(programme);
   }
-  else if(use==1){
+  else if(usep==1){
     glUseProgram(programme_squirrel);
+    GLint radiusLocation = glGetUniformLocation(programme_squirrel, "circleRadius");
+    float radius = 0.2f; // Rayon du cercle (20% de l'image)
+    glUniform1f(radiusLocation, radius);
   }
   // Specifier le VAO à utiliser -> glBindVertexArray(GLuint)
   glBindVertexArray(VAO);
@@ -266,14 +269,12 @@ void restart_programme(){
 }
 
 void switch_programme(){
-      std::cout<<use<<std::endl;
-      if (use==0){
-        use=1;
+      if (usep==0){
+        usep=1;
       }
-      else if (use==1){
-        use=0;
+      else if (usep==1){
+        usep=0;
       }
-      std::cout<<use<<std::endl;
 }
 
 static void keyboard_callback(unsigned char key, int, int)
