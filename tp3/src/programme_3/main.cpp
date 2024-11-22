@@ -18,6 +18,7 @@
 #include "camera.h"
 
 GLuint program_id;
+GLuint program_tf;
 GLuint VAO;
 GLuint n_elements;
 GLuint n_points;
@@ -28,6 +29,7 @@ GLuint texture_id;
 // You can use the enum
 enum VBO_TYPE{POSITION0, POSITION1, NORMAL, TEXCOORD};
 GLuint VBO[4]; 
+GLuint TF; 
 
 Camera cam;
 
@@ -41,6 +43,8 @@ void init()
   m.apply_matrix(rmat);
   m.compute_normales();
   m.normalize();
+  VAO = m.load_to_gpu();
+
   texture_id = glhelper::load_texture("data/Frankie/flyingsquirrel_skin_col.png");
   auto pos = m.position();
   auto normal = m.normal();
@@ -55,6 +59,51 @@ void init()
   //  -> VBO MUST be as defined in the global variables : SEPARATE, 1 VBO for pos, 1 VBO for normal, 1 VBO for texcoord, 1 VBO for TF writting
   //  -> you can read again the Mesh::load_to_gpu() function but there is some changes
   //END TODO
+
+  program_tf = glCreateProgram();
+  GLuint vs_id = glhelper::compile_shader(glhelper::read_file("shaders/tf.vert").c_str(),GL_VERTEX_SHADER);
+  // pas de fragment shader car il intervient après dans le pipeline graphique, après rasterization 
+  glAttachShader(program_tf, vs_id);
+
+  const char* varyings[] = {"pos"}; // nom de l'output shader (visible dans tf.vert)
+  glTransformFeedbackVaryings(program_tf, 1, varyings, GL_SEPARATE_ATTRIBS);
+
+  glLinkProgram(program_tf);
+  // glhelper::check_error_link(program_tf);
+  // glDeleteShader(vs_id);
+  
+/////////////////////////////////////////////
+  glGenVertexArrays(1, &VAO);
+  glBindVertexArray(VAO);
+
+  glGenBuffers(4, VBO);
+
+  glBindBuffer(GL_ARRAY_BUFFER, VBO[POSITION0]);
+  glBufferData(GL_ARRAY_BUFFER, pos.size() * sizeof(GLfloat), pos.data(), GL_STATIC_DRAW);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0); // pas offset car les données sont séparé et plsu entrelacé
+  glEnableVertexAttribArray(0);
+
+  glBindBuffer(GL_ARRAY_BUFFER, VBO[NORMAL]);
+  glBufferData(GL_ARRAY_BUFFER, normal.size() * sizeof(GLfloat), normal.data(), GL_STATIC_DRAW);
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
+  glEnableVertexAttribArray(1);
+
+  glBindBuffer(GL_ARRAY_BUFFER, VBO[TEXCOORD]);
+  glBufferData(GL_ARRAY_BUFFER, texcoord.size() * sizeof(GLfloat), texcoord.data(), GL_STATIC_DRAW);
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), 0);
+  glEnableVertexAttribArray(2);
+
+  glBindBuffer(GL_ARRAY_BUFFER, VBO[POSITION1]);
+  glBufferData(GL_ARRAY_BUFFER, pos.size() * sizeof(GLfloat), nullptr, GL_STATIC_DRAW);
+  glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
+  glEnableVertexAttribArray(3);
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,m.create_EBO());
+
+  glEnableVertexAttribArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+
 
   glEnable(GL_DEPTH_TEST);            
 }
@@ -89,7 +138,20 @@ static void display_callback()
   // Swap read and write buffers
   //END TODO
 
+  glEnable(GL_RASTERIZER_DISCARD);  
+  glUseProgram(program_tf);
+  glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER,0,VBO[POSITION1]);
 
+  glBindVertexArray(VAO);
+  glBeginTransformFeedback(GL_POINTS);
+  glDrawArrays(GL_POINTS, 0,n_points);
+  glEndTransformFeedback();
+
+  glFlush();
+  std::swap(VBO[POSITION0],VBO[POSITION1]);
+  glDisable(GL_RASTERIZER_DISCARD);
+  
+/////////////
 
   glUseProgram(program_id);
   glBindTexture(GL_TEXTURE_2D, texture_id);
@@ -97,6 +159,8 @@ static void display_callback()
   // TODO 
   // Update VAO after TF to use the new VBO with correct pointers
   // END TODO
+
+
 
   set_uniform_mvp(program_id);
   glDrawElements(GL_TRIANGLES, n_elements, GL_UNSIGNED_INT, 0); 

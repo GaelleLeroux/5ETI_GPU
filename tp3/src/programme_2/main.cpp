@@ -21,6 +21,7 @@ GLuint VAO;
 GLuint VAO_quad;
 GLuint FBO;
 GLuint n_elements;
+GLuint n_elements_quad;
 
 GLuint program_id;
 GLuint program_postprocess_id;
@@ -55,11 +56,12 @@ void init()
   // -> VAO_quad = m.load_to_gpu();
   // Create a new FBO and RBO and associated texture as described in the subject.
   // 
-  program_postprocess_id = glhelper::create_program_from_file("shaders/textured_quad.vert", "shaders/flou.frag");
+  program_postprocess_id = glhelper::create_program_from_file("shaders/textured_quad.vert", "shaders/flou_shaderToy.frag");
   Mesh m2 = Mesh::create_grid(2);
   auto rmat2 = glm::rotate(glm::mat4(1.0), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
   m2.apply_matrix(rmat2);
   VAO_quad = m2.load_to_gpu();
+  n_elements_quad= m2.size_element();
 
   glGenFramebuffers(1,&FBO);
   glBindFramebuffer(GL_FRAMEBUFFER,FBO);
@@ -125,7 +127,7 @@ static void display_callback()
 
   glUseProgram(program_postprocess_id); // utilise le programme de flou
   glBindVertexArray(VAO_quad); // utilise VOA quad qui contient carre 
-  glDrawElements(GL_TRIANGLES, n_elements, GL_UNSIGNED_INT, 0); CHECK_GL_ERROR(); // dessine dans le texture de l'ecran donc sur ecran en utilisant la texture du FBO
+  glDrawElements(GL_TRIANGLES, n_elements_quad, GL_UNSIGNED_INT, 0); CHECK_GL_ERROR(); // dessine dans le texture de l'ecran donc sur ecran en utilisant la texture du FBO
 
 
   glBindVertexArray(0);
