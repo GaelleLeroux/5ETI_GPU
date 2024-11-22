@@ -30,6 +30,7 @@ GLuint texture_id;
 enum VBO_TYPE{POSITION0, POSITION1, NORMAL, TEXCOORD};
 GLuint VBO[4]; 
 GLuint TF; 
+Mesh m;
 
 Camera cam;
 
@@ -38,7 +39,7 @@ void init()
   program_id = glhelper::create_program_from_file("shaders/basic.vert", "shaders/texture.frag");
 
   // Creation of the main character
-  Mesh m = Mesh::load_from_file("data/Frankie/Frankie.obj");
+  m = Mesh::load_from_file("data/Frankie/Frankie.obj");
   auto rmat = glm::rotate(glm::mat4(1.0), glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
   m.apply_matrix(rmat);
   m.compute_normales();
@@ -94,9 +95,8 @@ void init()
   glEnableVertexAttribArray(2);
 
   glBindBuffer(GL_ARRAY_BUFFER, VBO[POSITION1]);
-  glBufferData(GL_ARRAY_BUFFER, pos.size() * sizeof(GLfloat), nullptr, GL_STATIC_DRAW);
-  glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
-  glEnableVertexAttribArray(3);
+  glBufferData(GL_ARRAY_BUFFER, pos.size() * sizeof(GLfloat), nullptr, GL_STATIC_DRAW); 
+  // pas d'attribut 3 dans le fichier tf.vert
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,m.create_EBO());
 
@@ -159,6 +159,24 @@ static void display_callback()
   // TODO 
   // Update VAO after TF to use the new VBO with correct pointers
   // END TODO
+  glBindVertexArray(VAO);
+  glBindBuffer(GL_ARRAY_BUFFER, VBO[POSITION0]);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0); // pas offset car les données sont séparé et plsu entrelacé
+  glEnableVertexAttribArray(0);
+
+  glBindBuffer(GL_ARRAY_BUFFER, VBO[NORMAL]);
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), 0);
+  glEnableVertexAttribArray(1);
+
+  glBindBuffer(GL_ARRAY_BUFFER, VBO[TEXCOORD]);
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), 0);
+  glEnableVertexAttribArray(2);
+
+  glBindBuffer(GL_ARRAY_BUFFER, VBO[POSITION1]);
+  // pas d'attribut 3 dans le fichier tf.vert
+
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,m.create_EBO());
+
 
 
 
