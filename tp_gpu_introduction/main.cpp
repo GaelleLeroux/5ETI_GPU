@@ -249,7 +249,7 @@ static void display_callback()
   glClear(GL_COLOR_BUFFER_BIT);
 
   // TODO :
-  // Specifier le programme -> glUseProgram(GLuint)
+  // Specifier le progr amme -> glUseProgram(GLuint)
   init();
   if (usep==0){
     glUseProgram(programme);
